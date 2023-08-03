@@ -61,8 +61,6 @@ document.addEventListener('DOMContentLoaded', () => {
     localStorage.setItem('expenses', JSON.stringify(expenses));
     updateExpensesList();
 
-    // Show the expense as a toast with color indicator
-    showToast(expenseName, expenseAmount, selectedCategory, isIncome);
   });
 
   addCategoryButton.addEventListener('click', () => {
@@ -89,7 +87,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const listItem = document.createElement('li');
       listItem.textContent = `${expense.name}: $${expense.amount.toFixed(2)} (${expense.category})`;
       
-      // Create delete button
+      // delete button
       const deleteButton = document.createElement('button');
       deleteButton.textContent = 'Delete';
       deleteButton.classList.add('delete-button');
@@ -133,22 +131,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Function to show a toast
-  function showToast(name, amount, category, isIncome) {
-    const toast = document.createElement('div');
-    toast.classList.add('toast');
-
-    // Set the background color based on income or expense
-    toast.style.backgroundColor = isIncome ? '#4caf50' : '#f44336';
-
-    toast.textContent = `${name}: $${amount.toFixed(2)} (${category})`;
-    document.body.appendChild(toast);
-
-    // Remove the toast after 3 seconds
-    setTimeout(() => {
-      toast.remove();
-    }, 3000);
-  }
 
   // Function to delete an expense
   function deleteExpense(expense) {
