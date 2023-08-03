@@ -1,60 +1,162 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const expenseForm = document.getElementById('expenseForm');
-    const expenseList = document.getElementById('expenseList');
-  
-    // Function to fetch expenses from the local JSON Server
-    function fetchExpenses() {
-      fetch('http://localhost:3000/expenses')
-        .then((response) => response.json())
-        .then((data) => displayExpenses(data))
-        .catch((error) => console.error('Error fetching expenses:', error));
-    }
-  
-    // Function to display expenses on the page
-    function displayExpenses(expenses) {
-      expenseList.innerHTML = '';
-      expenses.forEach((expense) => {
-        const listItem = document.createElement('li');
-        listItem.innerHTML = `<span>Date: ${expense.expenseDate}</span> | <span>Item: ${expense.itemName}</span> | <span>Amount: ${expense.itemAmount}</span> | <span>Category: ${expense.category}</span>`;
-        expenseList.appendChild(listItem);
-      });
-    }
-  
-    // Function to handle form submission and add a new expense
-    function addExpense(event) {
-      event.preventDefault();
-      const expenseDate = document.getElementById('expenseDate').value;
-      const itemName = document.getElementById('itemName').value;
-      const category = document.getElementById('category').value;
-      const itemAmount = parseFloat(document.getElementById('itemAmount').value);
-  
-      const newExpense = {
-        expenseDate,
-        itemName,
-        category,
-        itemAmount,
-        isDeleted: false,
-      };
-  
-      fetch('http://localhost:3000/expenses', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(newExpense),
-      })
-        .then((response) => response.json())
-        .then((data) => {
-          console.log('Expense added successfully:', data);
-          fetchExpenses();
-        })
-        .catch((error) => console.error('Error adding expense:', error));
-    }
-  
-    // Add event listener to form submission
-    expenseForm.addEventListener('submit', addExpense);
-  
-    // Fetch and display expenses on page load
-    fetchExpenses();
+  const savingsInput = document.getElementById('savingsInput');
+  const setSavingsButton = document.getElementById('setSavingsButton');
+  const savingsProgressBar = document.getElementById('savingsProgressBar');
+
+  const budgetInput = document.getElementById('budgetInput');
+  const expenseNameInput = document.getElementById('expenseNameInput');
+  const expenseAmountInput = document.getElementById('expenseAmountInput');
+  const addExpenseButton = document.getElementById('addExpenseButton');
+  const expensesList = document.getElementById('expensesList');
+
+  const categoryDropdown = document.getElementById('categoryDropdown');
+  const categoryInput = document.getElementById('categoryInput');
+  const addCategoryButton = document.getElementById('addCategoryButton');
+  const categoryList = document.getElementById('categoryList');
+
+  // Initialize savings, expenses, and categories
+  let savings = 0;
+  let expenses = [];
+  let categories = [];
+
+  // Load data from localStorage if available
+  const savedSavings = localStorage.getItem('savings');
+  const savedExpenses = localStorage.getItem('expenses');
+  const savedCategories = localStorage.getItem('categories');
+
+  if (savedSavings) {
+    savings = parseFloat(savedSavings);
+    savingsInput.value = savings;
+    updateSavingsProgressBar();
+  }
+
+  if (savedExpenses) {
+    expenses = JSON.parse(savedExpenses);
+    updateExpensesList();
+  }
+
+  if (savedCategories) {
+    categories = JSON.parse(savedCategories);
+    updateCategoryDropdown();
+    updateCategoryList();
+  }
+
+  setSavingsButton.addEventListener('click', () => {
+    savings = parseFloat(savingsInput.value);
+    localStorage.setItem('savings', savings);
+    updateSavingsProgressBar();
   });
-  
+
+  addExpenseButton.addEventListener('click', () => {
+    const expenseName = expenseNameInput.value.trim();
+    if (expenseName === '') return;
+
+    const expenseAmount = parseFloat(expenseAmountInput.value);
+    if (isNaN(expenseAmount)) return;
+
+    const selectedCategory = categoryDropdown.value;
+    const isIncome = expenseAmount >= 0; // Determine if it's income or expense
+
+    expenses.push({ name: expenseName, amount: expenseAmount, category: selectedCategory, isIncome });
+    localStorage.setItem('expenses', JSON.stringify(expenses));
+    updateExpensesList();
+
+    // Show the expense as a toast with color indicator
+    showToast(expenseName, expenseAmount, selectedCategory, isIncome);
+  });
+
+  addCategoryButton.addEventListener('click', () => {
+    const category = categoryInput.value.trim();
+    if (category === '') return;
+
+    categories.push(category);
+    localStorage.setItem('categories', JSON.stringify(categories));
+    updateCategoryDropdown();
+    updateCategoryList();
+  });
+
+  function updateSavingsProgressBar() {
+    const currentSavings = parseFloat(savingsInput.value);
+    const percentage = (currentSavings / savings) * 100;
+    savingsProgressBar.style.width = `${percentage}%`;
+  }
+
+  function updateExpensesList() {
+    expensesList.innerHTML = '';
+    let totalExpenses = 0;
+
+    for (const expense of expenses) {
+      const listItem = document.createElement('li');
+      listItem.textContent = `${expense.name}: $${expense.amount.toFixed(2)} (${expense.category})`;
+      
+      // Create delete button
+      const deleteButton = document.createElement('button');
+      deleteButton.textContent = 'Delete';
+      deleteButton.classList.add('delete-button');
+      listItem.appendChild(deleteButton);
+
+      // Attach delete expense event
+      deleteButton.addEventListener('click', () => {
+        deleteExpense(expense);
+      });
+
+      expensesList.appendChild(listItem);
+      totalExpenses += expense.amount;
+    }
+
+    const remainingBudget = parseFloat(budgetInput.value) - totalExpenses;
+    if (!isNaN(remainingBudget)) {
+      savingsInput.value = remainingBudget;
+      localStorage.setItem('savings', remainingBudget);
+      updateSavingsProgressBar();
+    }
+  }
+
+  function updateCategoryDropdown() {
+    categoryDropdown.innerHTML = '<option value="" disabled selected>Select a category</option>';
+
+    for (const category of categories) {
+      const option = document.createElement('option');
+      option.value = category;
+      option.textContent = category;
+      categoryDropdown.appendChild(option);
+    }
+  }
+
+  function updateCategoryList() {
+    categoryList.innerHTML = '';
+
+    for (const category of categories) {
+      const listItem = document.createElement('li');
+      listItem.textContent = category;
+      categoryList.appendChild(listItem);
+    }
+  }
+
+  // Function to show a toast
+  function showToast(name, amount, category, isIncome) {
+    const toast = document.createElement('div');
+    toast.classList.add('toast');
+
+    // Set the background color based on income or expense
+    toast.style.backgroundColor = isIncome ? '#4caf50' : '#f44336';
+
+    toast.textContent = `${name}: $${amount.toFixed(2)} (${category})`;
+    document.body.appendChild(toast);
+
+    // Remove the toast after 3 seconds
+    setTimeout(() => {
+      toast.remove();
+    }, 3000);
+  }
+
+  // Function to delete an expense
+  function deleteExpense(expense) {
+    const index = expenses.indexOf(expense);
+    if (index !== -1) {
+      expenses.splice(index, 1);
+      localStorage.setItem('expenses', JSON.stringify(expenses));
+      updateExpensesList();
+    }
+  }
+});
