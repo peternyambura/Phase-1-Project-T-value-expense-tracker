@@ -93,7 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
       deleteButton.classList.add('delete-button');
       listItem.appendChild(deleteButton);
 
-      // Attach delete expense event
+      // delete expense event
       deleteButton.addEventListener('click', () => {
         deleteExpense(expense);
       });
