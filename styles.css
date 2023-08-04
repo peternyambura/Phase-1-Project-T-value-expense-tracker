@@ -83,3 +83,16 @@ img{
  width: 100px;
  height: 100px;
 }
+
+#categoryList{
+  position: relative;
+  display: block;
+  padding: .4em .4em .4em 2em;
+  padding: .4em;
+  margin: .5em 0;
+  background: #ddd;
+  color: #444;
+  text-decoration: none;
+  border-radius: .3em;
+  transition: all .3s ease-out;
+}
